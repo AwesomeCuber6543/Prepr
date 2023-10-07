@@ -1,20 +1,81 @@
-import cv2 as cv
 import numpy as np
 import mediapipe as mp
 import math
 import threading
 from flask import Flask, jsonify, request
 import os, sys
+import openai
+import cv2 as cv
+import multiprocessing
+import speech_recognition as sr
+import wave
+import whisper
+import time
+
+
+model = whisper.load_model('base')
+
+# Constants for audio recording
+FORMAT = sr.AudioData
+CHANNELS = 1
+RATE = 22000
+RECORD_SECONDS = 45  # Adjust this as needed
+
+recognizer = sr.Recognizer()
+
+
+
+
+
 mp_face_mesh = mp.solutions.face_mesh
-
-
-
-
 
 app = Flask(__name__)
 
 eyePos = []
+openai.api_key = "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"
+conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepr and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question"}]
 
+
+
+class chattingWork:
+    def addUserConvo(self, message):
+        conversation.append({"role": "user", "content": message})
+
+
+    def addGPTConvo(self, response):
+        conversation.append({"role": "user", "content": response["choices"][0]["message"]["content"]})
+
+
+    def runConvo(self):
+
+
+        while True:
+            # message = input()
+            print("recording ... ")
+            with sr.Microphone(sample_rate=RATE) as source:
+                print("Recording...")
+                # audio = recognizer.listen(source, timeout=None, phrase_time_limit=RECORD_SECONDS)
+                audio = recognizer.listen(source)
+            print("Recording stopped.")
+
+            # Save the recorded audio to a WAV file
+            with wave.open("assets/shamzy.mp3", 'wb') as wf:
+                wf.setnchannels(CHANNELS)
+                wf.setsampwidth(audio.sample_width)
+                wf.setframerate(RATE)
+                wf.writeframes(audio.frame_data)
+
+            result = model.transcribe('assets/shamzy.mp3', fp16 = False)
+            self.addUserConvo(result['text'])
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=conversation,
+                temperature=0,
+            )
+            self.addGPTConvo(response)
+            print(response["choices"][0]["message"]["content"])
+            time.sleep(3)
+            os.remove("assets/shamzy.mp3")
 
 
 
@@ -79,8 +140,8 @@ class iris_recognition:
 
                     iris_pos, ratio = self.iris_position(center_right, mesh_points[self.R_H_RIGHT], mesh_points[self.R_H_LEFT][0])
 
-                    print(iris_pos)
-                    print(count)
+                    # print(iris_pos)
+                    # print(count)
                     count += 1
                 if count % 30 == 0 and count != 0:
                     eyePos.append(iris_pos)
@@ -108,6 +169,10 @@ def runIris():
     ir = iris_recognition()
     ir.runFullIris()
 
+def runGPT():
+    gpt = chattingWork()
+    gpt.runConvo()
+
 
 @app.route('/GetContactPercentage', methods = ['POST'])
 def getContactPercentage():
@@ -120,9 +185,15 @@ def getContactPercentage():
 
 if __name__ == "__main__":
     flask_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=2516))
+    gpt_thread = threading.Thread(target=runGPT)
+
 
     flask_thread.daemon = True
+    gpt_thread.daemon = True
 
+    gpt_process = multiprocessing.Process(target=runGPT)
 
     flask_thread.start()
+    gpt_thread.start()
     runIris()
+    
