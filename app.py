@@ -43,8 +43,9 @@ keyWordsHit = []
 fillerWordsUsed = 0
 lastTurn = 0
 turn = 0
+timeForInterview = 30
 openai.api_key = secretkey.SECRET_KEY
-conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question"}]
+conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question make sure you ask follow up questions based on the answers. MAKE SURE you also try and make it super casual, like you are my friend. Maybe even throw in a few jokes or something. You will also tell me in the beginning that the interview will only be 1 minute long and ask me if that is ok. Wait for my response. You will tell me when the two minutes of interviewing has been reached."}]
 
 
 
@@ -85,14 +86,13 @@ class chattingWork:
                 temperature=0,
             )
             self.addGPTConvo(response)
-            tts = gtts.gTTS(response["choices"][0]["message"]["content"], lang="en-ph")
+            tts = gtts.gTTS(response["choices"][0]["message"]["content"], lang="en-GB", slow=False )
             tts.save("assets/bamzy.mp3")
             playsound("assets/bamzy.mp3")
             #print(response["choices"][0]["message"]["content"])
             # for word in result['text'].split():
             #     if word in keyWords and word not in keyWordsHit:
             #         keyWordsHit.append(word)
-            time.sleep(1)
             os.remove("assets/shamzy.mp3")
             os.remove("assets/bamzy.mp3")
 
@@ -201,6 +201,16 @@ def getContactPercentage():
     except:
         return jsonify({'message': 'There was a problem getting the eye contact accuracy'}), 400
     
+
+@app.route('/EndInterview', methods = ['GET'])
+def getKeyWordUsage():
+    try:
+
+        return jsonify(keyWordsHit), 200
+    except:
+        return jsonify({'message': 'There was a problem getting the key words used'}), 400
+    
+    
     
 
     
@@ -210,15 +220,16 @@ def getContactPercentage():
 
 if __name__ == "__main__":
     flask_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=2516))
-    gpt_thread = threading.Thread(target=runGPT)
+    # gpt_thread = threading.Thread(target=runGPT)
 
 
     flask_thread.daemon = True
-    gpt_thread.daemon = True
+    # gpt_thread.daemon = True
 
     gpt_process = multiprocessing.Process(target=runGPT)
 
     flask_thread.start()
-    gpt_thread.start()
+    # gpt_thread.start()
+    gpt_process.start()
     runIris()
     
