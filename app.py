@@ -19,7 +19,7 @@ model = whisper.load_model('base')
 FORMAT = sr.AudioData
 CHANNELS = 1
 RATE = 22000
-RECORD_SECONDS = 45  # Adjust this as needed
+RECORD_SECONDS = 45  
 
 recognizer = sr.Recognizer()
 
