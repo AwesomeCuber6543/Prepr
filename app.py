@@ -43,9 +43,9 @@ keyWordsHit = []
 fillerWordsUsed = 0
 lastTurn = 0
 turn = 0
-timeForInterview = 30
+questionsForInterview = 5
 openai.api_key = secretkey.SECRET_KEY
-conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question make sure you ask follow up questions based on the answers. MAKE SURE you also try and make it super casual, like you are my friend. Maybe even throw in a few jokes or something. You will also tell me in the beginning that the interview will only be 1 minute long and ask me if that is ok. Wait for my response. You will tell me when the two minutes of interviewing has been reached."}]
+conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question make sure you ask follow up questions based on the answers. MAKE SURE you also try and make it super casual, like you are my friend. Maybe even throw in a few jokes or something. You will also tell me in the beginning that the interview will only be 1 minute long and ask me if that is ok. Wait for my response. You will tell me when the two minutes of interviewing has been reached. After you believe the interview has gotten to a good ending point then you will say ONLY the phrase: ok then thank you so much for your time and have a nice day"}]
 
 
 
@@ -59,8 +59,22 @@ class chattingWork:
 
 
     def runConvo(self):
-
+        global questionsForInterview
+        count = 0
         while True:
+
+            count += 1 
+            if count >= questionsForInterview:
+                response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "system", "content": "You will say nothing except for the phrase, Unfortunatly we have run out of time. Thank you for taking the time to interview with us today and I wish you well in all your future endeavors. Have a nice day!"}],
+                temperature=0,
+                )
+                self.addGPTConvo(response)
+                tts = gtts.gTTS(response["choices"][0]["message"]["content"], lang="en-GB", slow=False )
+                tts.save("assets/bamzy.mp3")
+                playsound("assets/bamzy.mp3")
+                break
             # message = input()
             print("poop")
             print("recording ... ")
@@ -86,13 +100,17 @@ class chattingWork:
                 temperature=0,
             )
             self.addGPTConvo(response)
+            if(str.lower(response["choices"][0]["message"]["content"]) == "ok then thank you so much for your time and have a nice day"):
+                break
             tts = gtts.gTTS(response["choices"][0]["message"]["content"], lang="en-GB", slow=False )
             tts.save("assets/bamzy.mp3")
             playsound("assets/bamzy.mp3")
             #print(response["choices"][0]["message"]["content"])
-            # for word in result['text'].split():
-            #     if word in keyWords and word not in keyWordsHit:
-            #         keyWordsHit.append(word)
+            for word in result['text'].split():
+                print(word)
+                # if word in keyWords and word not in keyWordsHit:
+                #     print("shamzy")
+                #     keyWordsHit.append(word)
             os.remove("assets/shamzy.mp3")
             os.remove("assets/bamzy.mp3")
 
