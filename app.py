@@ -31,8 +31,15 @@ recognizer = sr.Recognizer()
 mp_face_mesh = mp.solutions.face_mesh
 
 app = Flask(__name__)
+# CORS(app)
 
 eyePos = []
+history = []
+keyWords = ["Teamwork", "Communication", "Problem-solving", "Adaptability", "Leadership", "Punctuality", "Initiative", "Detail-oriented", "Collaboration", "Creativity", "Critical-thinking", "Decision-making", "Conflict-resolution", "Customer-service", "Multitasking", "Technical-skills", "Organization", "Self-motivation", "Flexibility", "Goal-oriented", "Learning", "Networking", "Project-management", "Customer-focus", "Innovation", "Analysis", "Empathy", "Work-ethic", "Resourcefulness", "Professionalism"]
+keyWordsHit = []
+fillerWordsUsed = 0
+lastTurn = 0
+turn = 0
 openai.api_key = secretkey.SECRET_KEY
 conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepr and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question"}]
 
@@ -49,12 +56,24 @@ class chattingWork:
 
     def runConvo(self):
 
-
+        global turn
+        global lastTurn
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=conversation,
+            temperature=0,
+        )
+        self.addGPTConvo(response)
+        print(response["choices"][0]["message"]["content"])
+        turn = 1
+        time.sleep(1)
+        lastTurn = 1
         while True:
             # message = input()
             print("recording ... ")
             with sr.Microphone(sample_rate=RATE) as source:
                 print("Recording...")
+                turn = 0
                 # audio = recognizer.listen(source, timeout=None, phrase_time_limit=RECORD_SECONDS)
                 audio = recognizer.listen(source)
             print("Recording stopped.")
@@ -75,7 +94,14 @@ class chattingWork:
             )
             self.addGPTConvo(response)
             print(response["choices"][0]["message"]["content"])
-            time.sleep(3)
+            
+            for word in response["choices"][0]["message"]["content"].split():
+                if word in keyWords and word not in keyWordsHit:
+                    keyWordsHit.append(word)
+
+            turn = 0
+            time.sleep(15)
+            lastTurn = 0
             os.remove("assets/shamzy.mp3")
 
 
@@ -104,9 +130,9 @@ class iris_recognition:
         total_distance = self.euclidean_distance(right_point, left_point)
         ratio = center_to_right_dist/total_distance
         iris_position =""
-        if ratio >= 2.2 and ratio <= 2.65:
+        if ratio >= 2.2 and ratio <= 2.7:
             iris_position = "right"
-        elif ratio >= 2.8 and ratio <= 3.2:
+        elif ratio >= 2.95 and ratio <= 3.2:
             iris_position = "left"
         else:
             iris_position = "center"
@@ -161,7 +187,7 @@ def calcPercentage(arr, target):
         for x in arr:
             if x == target:
                 num += 1
-        return num/len(arr)
+        return (num/len(arr)) * 100
     else:
         return 0
 
@@ -175,12 +201,43 @@ def runGPT():
     gpt.runConvo()
 
 
-@app.route('/GetContactPercentage', methods = ['POST'])
+@app.route('/GetContactPercentage', methods = ['POST', 'GET'])
 def getContactPercentage():
     try:
-        return jsonify(calcPercentage(eyePos, "center")), 200
+        return jsonify(round(calcPercentage(eyePos, "center"), 2)), 200
     except:
         return jsonify({'message': 'There was a problem getting the eye contact accuracy'}), 400
+    
+
+@app.route('/StartInterview', methods = ['POST', 'GET'])
+def startInterview():
+    try:
+        eyePos = []
+        keyWordsHit = []
+        fillerWordsUsed = 0
+        jsonify({'message': 'Interview Started Successfully'}), 200
+    except:
+        jsonify({'message': 'There was a problem starting the interview'}), 400
+
+
+@app.route('/GetTurn', methods = ['POST', 'GET'])
+def startInterview():
+    try:
+        if turn != lastTurn:
+            jsonify({'message': turn}), 200
+        else: jsonify({'message': 'not time yet'}), 400
+
+    except:
+        jsonify({'message': 'There was a problem getting whose turn it is'}), 400
+
+
+@app.route('/GetHistory', methods = ['GET'])
+def startInterview():
+    try:
+        jsonify({'message': history}), 200
+    except:
+        jsonify({'message': 'There was a problem getting the history'}), 400
+
 
 
 
