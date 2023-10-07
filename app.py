@@ -12,6 +12,9 @@ import wave
 import whisper
 import time
 import secretkey
+from flask_cors import CORS
+import gtts
+from playsound import playsound
 
 
 model = whisper.load_model('base')
@@ -35,13 +38,13 @@ app = Flask(__name__)
 
 eyePos = []
 history = []
-keyWords = ["Teamwork", "Communication", "Problem-solving", "Adaptability", "Leadership", "Punctuality", "Initiative", "Detail-oriented", "Collaboration", "Creativity", "Critical-thinking", "Decision-making", "Conflict-resolution", "Customer-service", "Multitasking", "Technical-skills", "Organization", "Self-motivation", "Flexibility", "Goal-oriented", "Learning", "Networking", "Project-management", "Customer-focus", "Innovation", "Analysis", "Empathy", "Work-ethic", "Resourcefulness", "Professionalism"]
+keyWords = ['teamwork', "communication", "problem-solving", "adaptability", "leadership", "punctuality", "initiative", "detail-oriented", "collaboration", "creativity", "critical-thinking", "decision-making", "conflict-resolution", "customer-service", "multitasking", "echnical-skills", "organization", "Self-motivation", "flexibility", "goal-oriented", "learning", "networking", "Project-management", "customer-focus", "innovation", "analysis", "empathy", "work-ethic", "resourcefulness", "professionalism"]
 keyWordsHit = []
 fillerWordsUsed = 0
 lastTurn = 0
 turn = 0
 openai.api_key = secretkey.SECRET_KEY
-conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepr and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question"}]
+conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question"}]
 
 
 
@@ -56,24 +59,13 @@ class chattingWork:
 
     def runConvo(self):
 
-        global turn
-        global lastTurn
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=conversation,
-            temperature=0,
-        )
-        self.addGPTConvo(response)
-        print(response["choices"][0]["message"]["content"])
-        turn = 1
-        time.sleep(1)
-        lastTurn = 1
         while True:
             # message = input()
+            print("poop")
             print("recording ... ")
             with sr.Microphone(sample_rate=RATE) as source:
                 print("Recording...")
-                turn = 0
+                # time.sleep(1)
                 # audio = recognizer.listen(source, timeout=None, phrase_time_limit=RECORD_SECONDS)
                 audio = recognizer.listen(source)
             print("Recording stopped.")
@@ -93,16 +85,16 @@ class chattingWork:
                 temperature=0,
             )
             self.addGPTConvo(response)
-            print(response["choices"][0]["message"]["content"])
-            
-            for word in response["choices"][0]["message"]["content"].split():
-                if word in keyWords and word not in keyWordsHit:
-                    keyWordsHit.append(word)
-
-            turn = 0
-            time.sleep(15)
-            lastTurn = 0
+            tts = gtts.gTTS(response["choices"][0]["message"]["content"], lang="en-ph")
+            tts.save("assets/bamzy.mp3")
+            playsound("assets/bamzy.mp3")
+            #print(response["choices"][0]["message"]["content"])
+            # for word in result['text'].split():
+            #     if word in keyWords and word not in keyWordsHit:
+            #         keyWordsHit.append(word)
+            time.sleep(1)
             os.remove("assets/shamzy.mp3")
+            os.remove("assets/bamzy.mp3")
 
 
 
@@ -176,7 +168,8 @@ class iris_recognition:
                 key = cv.waitKey(1)
                 if key ==ord("q"):
                     x = calcPercentage(eyePos, "center")
-                    print("THE ACCURACY IS ", x * 100, "%")
+                    print("THE ACCURACY IS ", x , "%")
+                    print(keyWordsHit)
                     break
         self.cap.release()
         cv.destroyAllWindows()
@@ -208,35 +201,9 @@ def getContactPercentage():
     except:
         return jsonify({'message': 'There was a problem getting the eye contact accuracy'}), 400
     
+    
 
-@app.route('/StartInterview', methods = ['POST', 'GET'])
-def startInterview():
-    try:
-        eyePos = []
-        keyWordsHit = []
-        fillerWordsUsed = 0
-        jsonify({'message': 'Interview Started Successfully'}), 200
-    except:
-        jsonify({'message': 'There was a problem starting the interview'}), 400
-
-
-@app.route('/GetTurn', methods = ['POST', 'GET'])
-def startInterview():
-    try:
-        if turn != lastTurn:
-            jsonify({'message': turn}), 200
-        else: jsonify({'message': 'not time yet'}), 400
-
-    except:
-        jsonify({'message': 'There was a problem getting whose turn it is'}), 400
-
-
-@app.route('/GetHistory', methods = ['GET'])
-def startInterview():
-    try:
-        jsonify({'message': history}), 200
-    except:
-        jsonify({'message': 'There was a problem getting the history'}), 400
+    
 
 
 
