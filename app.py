@@ -41,8 +41,6 @@ history = []
 keyWords = ['teamwork', "communication", "problem-solving", "adaptability", "leadership", "punctuality", "initiative", "detail-oriented", "collaboration", "creativity", "critical-thinking", "decision-making", "conflict-resolution", "customer-service", "multitasking", "echnical-skills", "organization", "Self-motivation", "flexibility", "goal-oriented", "learning", "networking", "Project-management", "customer-focus", "innovation", "analysis", "empathy", "work-ethic", "resourcefulness", "professionalism"]
 keyWordsHit = []
 fillerWordsUsed = 0
-lastTurn = 0
-turn = 0
 questionsForInterview = 5
 openai.api_key = secretkey.SECRET_KEY
 conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question make sure you ask follow up questions based on the answers. MAKE SURE you also try and make it super casual, like you are my friend. Maybe even throw in a few jokes or something. You will also tell me in the beginning that the interview will only be 1 minute long and ask me if that is ok. Wait for my response. You will tell me when the two minutes of interviewing has been reached. After you believe the interview has gotten to a good ending point then you will say ONLY the phrase: ok then thank you so much for your time and have a nice day"}]
@@ -220,7 +218,7 @@ def getContactPercentage():
         return jsonify({'message': 'There was a problem getting the eye contact accuracy'}), 400
     
 
-@app.route('/EndInterview', methods = ['GET'])
+@app.route('/getKeyWordUsage', methods = ['GET'])
 def getKeyWordUsage():
     try:
 
@@ -228,8 +226,24 @@ def getKeyWordUsage():
     except:
         return jsonify({'message': 'There was a problem getting the key words used'}), 400
     
+
+@app.route('/getFillerWordsUsed', methods = ['GET'])
+def getKeyWordUsage():
+    try:
+
+        return jsonify(fillerWordsUsed), 200
+    except:
+        return jsonify({'message': 'There was a problem getting the number of filler words used'}), 400
+
     
-    
+@app.route('/StartInterview', methods = ['POST', 'GET'])
+def getContactPercentage():
+    try:
+        eyePos.clear()
+        keyWordsHit.clear()
+        jsonify({'message': 'Interview was started'}), 200
+    except:
+        return jsonify({'message': 'There was a problem getting the eye contact accuracy'}), 400
 
     
 
