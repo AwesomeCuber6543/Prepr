@@ -11,6 +11,7 @@ import speech_recognition as sr
 import wave
 import whisper
 import time
+import secretkey
 
 
 model = whisper.load_model('base')
@@ -32,7 +33,7 @@ mp_face_mesh = mp.solutions.face_mesh
 app = Flask(__name__)
 
 eyePos = []
-openai.api_key = "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"
+openai.api_key = secretkey.SECRET_KEY
 conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepr and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question"}]
 
 
