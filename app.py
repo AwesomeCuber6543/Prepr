@@ -10,7 +10,6 @@ import multiprocessing
 import speech_recognition as sr
 import wave
 import whisper
-import time
 import secretkey
 from flask_cors import CORS
 import gtts
@@ -41,6 +40,8 @@ history = []
 keyWords = ['teamwork', "communication", "problem-solving", "adaptability", "leadership", "punctuality", "initiative", "detail-oriented", "collaboration", "creativity", "critical-thinking", "decision-making", "conflict-resolution", "customer-service", "multitasking", "echnical-skills", "organization", "Self-motivation", "flexibility", "goal-oriented", "learning", "networking", "Project-management", "customer-focus", "innovation", "analysis", "empathy", "work-ethic", "resourcefulness", "professionalism"]
 keyWordsHit = []
 fillerWordsUsed = 0
+count = 0
+interviewDone = False
 questionsForInterview = 5
 openai.api_key = secretkey.SECRET_KEY
 conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question make sure you ask follow up questions based on the answers. MAKE SURE you also try and make it super casual, like you are my friend. Maybe even throw in a few jokes or something. You will also tell me in the beginning that the interview will only be 1 minute long and ask me if that is ok. Wait for my response. You will tell me when the two minutes of interviewing has been reached. After you believe the interview has gotten to a good ending point then you will say ONLY the phrase: ok then thank you so much for your time and have a nice day"}]
@@ -58,7 +59,8 @@ class chattingWork:
 
     def runConvo(self):
         global questionsForInterview
-        count = 0
+        global interviewDone
+        global count
         while True:
 
             count += 1 
@@ -72,6 +74,7 @@ class chattingWork:
                 tts = gtts.gTTS(response["choices"][0]["message"]["content"], lang="en-GB", slow=False )
                 tts.save("assets/bamzy.mp3")
                 playsound("assets/bamzy.mp3")
+                interviewDone = True
                 break
             # message = input()
             print("poop")
@@ -106,9 +109,9 @@ class chattingWork:
             #print(response["choices"][0]["message"]["content"])
             for word in result['text'].split():
                 print(word)
-                # if word in keyWords and word not in keyWordsHit:
-                #     print("shamzy")
-                #     keyWordsHit.append(word)
+                if word in keyWords and word not in keyWordsHit:
+                    # print(word)
+                    keyWordsHit.append(word)
             os.remove("assets/shamzy.mp3")
             os.remove("assets/bamzy.mp3")
 
@@ -228,7 +231,7 @@ def getKeyWordUsage():
     
 
 @app.route('/getFillerWordsUsed', methods = ['GET'])
-def getKeyWordUsage():
+def getFillerWordUsage():
     try:
 
         return jsonify(fillerWordsUsed), 200
@@ -237,13 +240,24 @@ def getKeyWordUsage():
 
     
 @app.route('/StartInterview', methods = ['POST', 'GET'])
-def getContactPercentage():
+def startInterview():
+    global conversation
+    global count
     try:
         eyePos.clear()
         keyWordsHit.clear()
+        conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question make sure you ask follow up questions based on the answers. MAKE SURE you also try and make it super casual, like you are my friend. Maybe even throw in a few jokes or something. You will also tell me in the beginning that the interview will only be 1 minute long and ask me if that is ok. Wait for my response. You will tell me when the two minutes of interviewing has been reached. After you believe the interview has gotten to a good ending point then you will say ONLY the phrase: ok then thank you so much for your time and have a nice day"}]
+        count = 0
         jsonify({'message': 'Interview was started'}), 200
     except:
         return jsonify({'message': 'There was a problem getting the eye contact accuracy'}), 400
+    
+@app.route('/isInterviewDone', methods = ['POST', 'GET'])
+def isInterviewDone():
+    try:
+        jsonify({'message': interviewDone}), 200
+    except:
+        return jsonify({'message': 'There was a problem getting the status of the interview'}), 400
 
     
 
