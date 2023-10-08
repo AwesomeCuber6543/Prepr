@@ -3,3 +3,21 @@ body{
     margin: 0;
     padding: 0;
 }
+
+/* Style the Monitor and Textbox components */
+.Monitor {
+    display: flex; /* Use flexbox for layout */
+    align-items: center; /* Vertically center content */
+    margin-left: 100px;
+  }
+  
+  .Textbox {
+    margin-left: 100px; /* Add some space between Monitor and Textbox */
+  }
+
+  .ButtonContainer {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+  }
+  
