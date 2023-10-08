@@ -3,18 +3,18 @@ import mediapipe as mp
 import math
 import threading
 from flask import Flask, jsonify, request
-import os, sys
+import os
 import openai
 import cv2 as cv
 import multiprocessing
 import speech_recognition as sr
 import wave
 import whisper
-import time
 import secretkey
-from flask_cors import CORS
 import gtts
 from playsound import playsound
+from flask_cors import CORS
+import time
 
 
 model = whisper.load_model('base')
@@ -34,20 +34,28 @@ recognizer = sr.Recognizer()
 mp_face_mesh = mp.solutions.face_mesh
 
 app = Flask(__name__)
-# CORS(app)
+CORS(app)
+
+
+interview_start_event = threading.Event()
 
 eyePos = []
 history = []
 keyWords = ['teamwork', "communication", "problem-solving", "adaptability", "leadership", "punctuality", "initiative", "detail-oriented", "collaboration", "creativity", "critical-thinking", "decision-making", "conflict-resolution", "customer-service", "multitasking", "echnical-skills", "organization", "Self-motivation", "flexibility", "goal-oriented", "learning", "networking", "Project-management", "customer-focus", "innovation", "analysis", "empathy", "work-ethic", "resourcefulness", "professionalism"]
 keyWordsHit = []
 fillerWordsUsed = 0
-questionsForInterview = 5
+count = 0
+interviewDone = False
+questionsForInterview = 1
 openai.api_key = secretkey.SECRET_KEY
-conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question make sure you ask follow up questions based on the answers. MAKE SURE you also try and make it super casual, like you are my friend. Maybe even throw in a few jokes or something. You will also tell me in the beginning that the interview will only be 1 minute long and ask me if that is ok. Wait for my response. You will tell me when the two minutes of interviewing has been reached. After you believe the interview has gotten to a good ending point then you will say ONLY the phrase: ok then thank you so much for your time and have a nice day"}]
+conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question make sure you ask follow up questions based on the answers. MAKE SURE you also try and make it super casual, like you are my friend. Maybe even throw in a few jokes or something. After you believe the interview has gotten to a good ending point then you will say ONLY the phrase: ok then thank you so much for your time and have a nice day"}]
 
 
 
 class chattingWork:
+
+    interviewStart = 0
+
     def addUserConvo(self, message):
         conversation.append({"role": "user", "content": message})
 
@@ -57,29 +65,32 @@ class chattingWork:
 
 
     def runConvo(self):
+        inti = 0
         global questionsForInterview
-        count = 0
+        global interviewDone
+        global count
+        global fillerWordsUsed
+        global conversation
+        interview_start_event.wait() 
         while True:
-
             count += 1 
+            if interviewDone == True:
+                break
             if count >= questionsForInterview:
                 response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "system", "content": "You will say nothing except for the phrase, Unfortunatly we have run out of time. Thank you for taking the time to interview with us today and I wish you well in all your future endeavors. Have a nice day!"}],
+                messages=[{"role": "system", "content": "You will say nothing except for the phrase: Unfortunatly we have run out of time. Thank you for taking the time to interview with us today Please make sure to press End Interview to ensure you get your results. Have a nice day!"}],
                 temperature=0,
                 )
                 self.addGPTConvo(response)
                 tts = gtts.gTTS(response["choices"][0]["message"]["content"], lang="en-GB", slow=False )
                 tts.save("assets/bamzy.mp3")
                 playsound("assets/bamzy.mp3")
+                interviewDone = True
                 break
-            # message = input()
-            print("poop")
             print("recording ... ")
             with sr.Microphone(sample_rate=RATE) as source:
                 print("Recording...")
-                # time.sleep(1)
-                # audio = recognizer.listen(source, timeout=None, phrase_time_limit=RECORD_SECONDS)
                 audio = recognizer.listen(source)
             print("Recording stopped.")
 
@@ -103,12 +114,12 @@ class chattingWork:
             tts = gtts.gTTS(response["choices"][0]["message"]["content"], lang="en-GB", slow=False )
             tts.save("assets/bamzy.mp3")
             playsound("assets/bamzy.mp3")
-            #print(response["choices"][0]["message"]["content"])
             for word in result['text'].split():
                 print(word)
-                # if word in keyWords and word not in keyWordsHit:
-                #     print("shamzy")
-                #     keyWordsHit.append(word)
+                if word in keyWords and word not in keyWordsHit:
+                    keyWordsHit.append(word)
+                if str.lower(word) == 'um' or str.lower(word) == 'uh' or str.lower(word) == 'umm':
+                    fillerWordsUsed += 1
             os.remove("assets/shamzy.mp3")
             os.remove("assets/bamzy.mp3")
 
@@ -147,10 +158,12 @@ class iris_recognition:
         return iris_position, ratio
     
     def runFullIris(self):
-
+        global interviewDone
         with mp_face_mesh.FaceMesh(max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5, min_tracking_confidence=0.5) as face_mesh:
             count = 0
             while True:
+                if interviewDone:
+                    gpt_thread.join()
                 ret, frame = self.cap.read()
                 if not ret:
                     break
@@ -213,7 +226,7 @@ def runGPT():
 @app.route('/GetContactPercentage', methods = ['POST', 'GET'])
 def getContactPercentage():
     try:
-        return jsonify(round(calcPercentage(eyePos, "center"), 2)), 200
+        return jsonify(float(round(calcPercentage(eyePos, "center"), 2))), 200
     except:
         return jsonify({'message': 'There was a problem getting the eye contact accuracy'}), 400
     
@@ -228,22 +241,46 @@ def getKeyWordUsage():
     
 
 @app.route('/getFillerWordsUsed', methods = ['GET'])
-def getKeyWordUsage():
+def getFillerWordUsage():
     try:
 
         return jsonify(fillerWordsUsed), 200
     except:
         return jsonify({'message': 'There was a problem getting the number of filler words used'}), 400
 
+
+
     
-@app.route('/StartInterview', methods = ['POST', 'GET'])
-def getContactPercentage():
+@app.route('/StartInterview', methods=['POST', 'GET'])
+def startInterview():
+    global conversation
+    global count
     try:
         eyePos.clear()
         keyWordsHit.clear()
-        jsonify({'message': 'Interview was started'}), 200
+        conversation = [{"role": "system", "content": "You are an interviewer for a company. ..."}]
+        count = 0
+        interview_start_event.set()  # Set the event to start the interview
+        print("Interview started")
+        return jsonify({'message': 'Interview was started'}), 200
     except:
-        return jsonify({'message': 'There was a problem getting the eye contact accuracy'}), 400
+        return jsonify({'message': 'There was a problem starting the interview'}), 400
+    
+@app.route('/EndInterview', methods=['POST', 'GET'])
+def endInterview():
+    global interviewDone
+    try:
+        interviewDone = True
+        return jsonify({'message': 'Interview was ended'}), 200
+    except:
+        return jsonify({'message': 'There was a problem ending the interview'}), 400
+
+@app.route('/isInterviewDone', methods = ['POST', 'GET'])
+def isInterviewDone():
+    try:
+        jsonify({'message': interviewDone}), 200
+    except:
+        return jsonify({'message': 'There was a problem getting the status of the interview'}), 400
 
     
 
@@ -252,16 +289,14 @@ def getContactPercentage():
 
 if __name__ == "__main__":
     flask_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=2516))
-    # gpt_thread = threading.Thread(target=runGPT)
+    gpt_thread = threading.Thread(target=runGPT)
 
 
     flask_thread.daemon = True
-    # gpt_thread.daemon = True
+    gpt_thread.daemon = True
 
     gpt_process = multiprocessing.Process(target=runGPT)
 
     flask_thread.start()
-    # gpt_thread.start()
-    gpt_process.start()
+    gpt_thread.start()
     runIris()
-    
