@@ -46,9 +46,9 @@ keyWordsHit = []
 fillerWordsUsed = 0
 count = 0
 interviewDone = False
-questionsForInterview = 5
+questionsForInterview = 1
 openai.api_key = secretkey.SECRET_KEY
-conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question make sure you ask follow up questions based on the answers. MAKE SURE you also try and make it super casual, like you are my friend. Maybe even throw in a few jokes or something. You will also tell me in the beginning that the interview will only be 1 minute long and ask me if that is ok. Wait for my response. You will tell me when the two minutes of interviewing has been reached. After you believe the interview has gotten to a good ending point then you will say ONLY the phrase: ok then thank you so much for your time and have a nice day"}]
+conversation = [{"role": "system", "content": "You are an interviewer for a company. You will ask behavioural questions similar to What is your biggest flaw or why do you want to work here. The first message you will say is Hello my name is Prepper and I will be your interviewer. Make sure to ask the questions one at a time and wait for the response. Make it seem like a natural conversation. Make sure the questions do not get too technical and if they do and you believe you cannot continue anymore say Alright and ask another behavioral question make sure you ask follow up questions based on the answers. MAKE SURE you also try and make it super casual, like you are my friend. Maybe even throw in a few jokes or something. After you believe the interview has gotten to a good ending point then you will say ONLY the phrase: ok then thank you so much for your time and have a nice day"}]
 
 
 
@@ -70,6 +70,7 @@ class chattingWork:
         global interviewDone
         global count
         global fillerWordsUsed
+        global conversation
         interview_start_event.wait() 
         while True:
             count += 1 
@@ -78,7 +79,7 @@ class chattingWork:
             if count >= questionsForInterview:
                 response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "system", "content": "You will say nothing except for the phrase, Unfortunatly we have run out of time. Thank you for taking the time to interview with us today and I wish you well in all your future endeavors. Have a nice day!"}],
+                messages=[{"role": "system", "content": "You will say nothing except for the phrase: Unfortunatly we have run out of time. Thank you for taking the time to interview with us today Please make sure to press End Interview to ensure you get your results. Have a nice day!"}],
                 temperature=0,
                 )
                 self.addGPTConvo(response)
@@ -157,10 +158,12 @@ class iris_recognition:
         return iris_position, ratio
     
     def runFullIris(self):
-
+        global interviewDone
         with mp_face_mesh.FaceMesh(max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5, min_tracking_confidence=0.5) as face_mesh:
             count = 0
             while True:
+                if interviewDone:
+                    gpt_thread.join()
                 ret, frame = self.cap.read()
                 if not ret:
                     break
