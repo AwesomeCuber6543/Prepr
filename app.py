@@ -73,6 +73,8 @@ class chattingWork:
         interview_start_event.wait() 
         while True:
             count += 1 
+            if interviewDone == True:
+                break
             if count >= questionsForInterview:
                 response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
@@ -260,6 +262,15 @@ def startInterview():
         return jsonify({'message': 'Interview was started'}), 200
     except:
         return jsonify({'message': 'There was a problem starting the interview'}), 400
+    
+@app.route('/EndInterview', methods=['POST', 'GET'])
+def endInterview():
+    global interviewDone
+    try:
+        interviewDone = True
+        return jsonify({'message': 'Interview was ended'}), 200
+    except:
+        return jsonify({'message': 'There was a problem ending the interview'}), 400
 
 @app.route('/isInterviewDone', methods = ['POST', 'GET'])
 def isInterviewDone():
