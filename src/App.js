@@ -22,7 +22,7 @@ function App() {
       .then(data => {
         // Handle the API response data here
         console.log(data);
-        alert('Interview started successfully!');
+        alert('Go ahead and introduce yourself');
       })
       .catch(error => {
         // Handle any errors that occurred during the fetch

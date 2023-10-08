@@ -11,11 +11,11 @@ async function getContactPercentage() {
       return eyeContactPercentage.toFixed(2) + '%';
     } else {
       console.error('Invalid eyeContactPercentage:', data);
-      return 'Data not available';
+      return 'Loading...';
     }
   } catch (error) {
     console.error('Error fetching eye contact data:', error);
-    return 'Data not available';
+    return 'Loading...';
   }
 }
 
@@ -26,7 +26,7 @@ async function getKeywordsUsed() {
     return data.join(', '); // Assuming keywords are returned as an array.
   } catch (error) {
     console.error('Error fetching keywords used data:', error);
-    return 'Data not available';
+    return 'Loading...';
   }
 }
 
@@ -37,7 +37,7 @@ async function getNumberOfFillerWords() {
     return data; // Assuming the number of filler words is returned as a number.
   } catch (error) {
     console.error('Error fetching filler words data:', error);
-    return 'Data not available';
+    return 'Loading...';
   }
 }
 
