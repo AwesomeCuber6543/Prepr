@@ -3,7 +3,7 @@ import mediapipe as mp
 import math
 import threading
 from flask import Flask, jsonify, request
-import os, sys
+import os
 import openai
 import cv2 as cv
 import multiprocessing
@@ -61,6 +61,7 @@ class chattingWork:
         global questionsForInterview
         global interviewDone
         global count
+        global fillerWordsUsed
         while True:
 
             count += 1 
@@ -76,13 +77,10 @@ class chattingWork:
                 playsound("assets/bamzy.mp3")
                 interviewDone = True
                 break
-            # message = input()
             print("poop")
             print("recording ... ")
             with sr.Microphone(sample_rate=RATE) as source:
                 print("Recording...")
-                # time.sleep(1)
-                # audio = recognizer.listen(source, timeout=None, phrase_time_limit=RECORD_SECONDS)
                 audio = recognizer.listen(source)
             print("Recording stopped.")
 
@@ -106,12 +104,12 @@ class chattingWork:
             tts = gtts.gTTS(response["choices"][0]["message"]["content"], lang="en-GB", slow=False )
             tts.save("assets/bamzy.mp3")
             playsound("assets/bamzy.mp3")
-            #print(response["choices"][0]["message"]["content"])
             for word in result['text'].split():
                 print(word)
                 if word in keyWords and word not in keyWordsHit:
-                    # print(word)
                     keyWordsHit.append(word)
+                if str.lower(word) == 'um' or str.lower(word) == 'uh' or str.lower(word) == 'umm':
+                    fillerWordsUsed += 1
             os.remove("assets/shamzy.mp3")
             os.remove("assets/bamzy.mp3")
 
